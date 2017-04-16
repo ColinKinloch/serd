@@ -37,6 +37,8 @@ def options(opt):
                    help='Build with large file support on 32-bit systems')
     opt.add_option('--no-posix', action='store_true', dest='no_posix',
                    help='Do not use posix_memalign, posix_fadvise, and fileno, even if present')
+    opt.add_option('--android', action='store_true', dest='android',
+                   help='Build for android')
 
 def configure(conf):
     conf.load('compiler_c')
@@ -44,11 +46,12 @@ def configure(conf):
     autowaf.display_header('Serd Configuration')
     autowaf.set_c99_mode(conf)
 
-    conf.env.BUILD_UTILS  = not Options.options.no_utils
+    conf.env.BUILD_UTILS  = not (Options.options.android or Options.options.no_utils)
     conf.env.BUILD_SHARED = not Options.options.no_shared
     conf.env.STATIC_PROGS = Options.options.static_progs
     conf.env.BUILD_STATIC = (Options.options.static or
                              Options.options.static_progs)
+    conf.env.ANDROID      = Options.options.android
 
     if not conf.env.BUILD_SHARED and not conf.env.BUILD_STATIC:
         conf.fatal('Neither a shared nor a static build requested')
@@ -107,6 +110,15 @@ def build(bld):
     libflags = ['-fvisibility=hidden']
     libs     = ['m']
     defines  = []
+    includes = ['.', './src']
+    ldflags  = []
+    libpath  = []
+
+    if bld.env.ANDROID:
+        includes += [bld.env.PREFIX + '/include/']
+        ldflags  += ['--sysroot=' + bld.env.PREFIX + '/..']
+        libpath  += [bld.env.PREFIX + '/lib/']
+
     if bld.env.MSVC_COMPILER:
         libflags = []
         libs     = []
@@ -117,8 +129,10 @@ def build(bld):
         bld(features        = 'c cshlib',
             export_includes = ['.'],
             source          = lib_source,
-            includes        = ['.', './src'],
+            includes        = includes,
             lib             = libs,
+            libpath         = libpath,
+            ldflags         = ldflags,
             name            = 'libserd',
             target          = 'serd-%s' % SERD_MAJOR_VERSION,
             vnum            = SERD_VERSION,
@@ -131,8 +145,10 @@ def build(bld):
         bld(features        = 'c cstlib',
             export_includes = ['.'],
             source          = lib_source,
-            includes        = ['.', './src'],
+            includes        = includes,
             lib             = libs,
+            libpath         = libpath,
+            ldflags         = ldflags,
             name            = 'libserd_static',
             target          = 'serd-%s' % SERD_MAJOR_VERSION,
             vnum            = SERD_VERSION,

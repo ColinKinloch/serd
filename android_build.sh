@@ -1,6 +1,6 @@
 function andenv() {
   export HOST_ARCH=$(uname -m)
-  export HOST_OS=darwin
+  export HOST_OS=$(uname | tr '[:upper:]' '[:lower:]')
   export TARG_ARM=arm
   export AND_API=24
   export AND_VER=4.9
@@ -13,7 +13,7 @@ function andenv() {
   export LIBDIR=${SYSROOT}/usr/lib/
   export INCLUDEDIR=${SYSROOT}/usr/include/
   export PATH="${NDK_BIN}:${PATH}:${NDK_BIN}"
-  export PKG_CONFIG_LIBDIR=${SYSROOT}/usr/lib/pkgconfig/
+  export PKG_CONFIG_PATH=${SYSROOT}/usr/lib/pkgconfig
 }
 andenv
 rm -r ./build
